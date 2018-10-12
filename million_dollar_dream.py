@@ -14,9 +14,6 @@ Example:
 
 TODO:
     - Test on big endian machine
-	- virusshare filter
-	- NIST filter
-	- Create filter from list of hashes
 	- Make as many filters as possible for likely software
         - Ubuntu distros
         - Debian distros
@@ -31,6 +28,16 @@ import sys
 import hashlib
 
 from bloomfilter import BloomFilter
+
+
+def is_md5(string):
+    if len(string) != 32:
+        return False
+    try:
+        int(string, 16)
+        return True
+    except ValueError:
+        return False
 
 
 def md5_first_8192(filename):
@@ -175,7 +182,7 @@ def usage(progname):
     Returns:
         Nothing.
     """
-    sys.stderr.write("usage: %s <calculate|lookup> <filterfile> <file1> [file2 ...]\n" % progname)
+    sys.stderr.write("usage: %s <calculate|lookup|fromfile> <filterfile> <file1> [file2 ...]\n" % progname)
     exit(os.EX_USAGE)
 
 
@@ -203,7 +210,7 @@ def main():
     except IndexError:
         usage(sys.argv[0])
 
-    if files == [] or sys.argv[1] not in ["calculate", "lookup"]:
+    if files == [] or sys.argv[1] not in ["calculate", "lookup", "fromfile"]:
         usage(sys.argv[0])
 
     if command == "lookup":
@@ -235,6 +242,41 @@ def main():
         for item in files:
             calculate_hashes(item)
 
+        print("[+] Saving %s filter to outfile: %s" % \
+            (bloomfilter.bytesize_human(), filterfile))
+        bloomfilter.save(filterfile)
+        print("[+] Done.")
+
+    if command == "fromfile":
+        if not writeable_file(filterfile):
+            sys.stdout.write("[-] Unable to open %s for writing\n" % filterfile)
+            usage(sys.argv[0])
+
+        print("[+] Counting hashes in %s" % files)
+        count = 0
+        for hashfile in files:
+            print(hashfile)
+            with open(hashfile, "r") as hashlist:
+                for line in hashlist:
+                    # skip comments and lines containing invalid hashes
+                    if line.startswith("#") or not is_md5(line.rstrip()):
+                        # print("invalid hash: ", line.rstrip())
+                        continue
+                    count += 1
+
+        print("    Counted %d files." % count)
+
+        bloomfilter = BloomFilter(count, 0.01)
+
+        print("[+] Adding hashes from %s" % files)
+        # TODO make sure i can open these files
+        for hashfile in files:
+            with open(hashfile, "r") as hashlist:
+                for line in hashlist:
+                    # skip comments and invalid hashes
+                    if line.startswith("#") or not is_md5(line.rstrip()):
+                        continue
+                    bloomfilter.add(line.rstrip().lower())
         print("[+] Saving %s filter to outfile: %s" % \
             (bloomfilter.bytesize_human(), filterfile))
         bloomfilter.save(filterfile)
