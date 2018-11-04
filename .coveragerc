@@ -1,0 +1,2 @@
+[run]
+omit = million_dollar_dream/pymmh3.py,million_dollar_dream/__version__.py
