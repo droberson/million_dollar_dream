@@ -3,6 +3,7 @@ dist/
 *.egg-info/
 .coverage
 *.egg
+*.json
 *.pyc
 *.swp
 __pycache__
