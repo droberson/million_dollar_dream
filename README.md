@@ -35,7 +35,7 @@ This dir has 3 files:
 ./source_dir/c_file.txt
 ```
 
-Also, let's assume you want store you filter in `/tmp/bloom`. So if
+Also, let's assume you want store your filter in `/tmp/bloom`. So if
 you're in this `million_dollar_dream` repo you just checked out, you'd run:
 
 ```bash
